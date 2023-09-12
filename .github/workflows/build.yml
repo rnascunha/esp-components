@@ -1,0 +1,19 @@
+name: Examples run
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Espressif IoT Development Framework (ESP-IDF)
+      uses: espressif/esp-idf-ci-action@v1.1.0
+      with:
+        esp_idf_version: release-v5.1
+        target: esp32
+        path: '.'
+        command: bash examples/run.sh .
