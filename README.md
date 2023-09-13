@@ -1,6 +1,6 @@
 # ESP-Components
 
-This is a collection of ESP32 components implemented in C++20. Some are just wrappers of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) provide by Espressif, others are more complex implementations aiming a more _friendly way_/_less error prone_ use.
+This is a collection of ESP32 components implemented in C++20. Some are just wrappers of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) provide by Espressif, others are more complex implementations aiming a more _friendly_ / _less error prone_ use.
 
 All components are provided at `components` directory. At `examples` you can see some examples of how to use this libraries. Some other facility scripts can be found at `scripts` directory.
 

@@ -111,7 +111,7 @@ examples_root=$PWD/examples
 
 build() {
   local -n ans=$1
-  exec_time ans idf.py build -C $examples_root/$2 -DEXTRA_COMPONENT_DIRS=$components >&3
+  exec_time ans idf.py build -C $examples_root/$2 >&3
 }
 
 clean() {
