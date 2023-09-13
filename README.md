@@ -1,19 +1,23 @@
 # ESP-Components
 
-This is a collection of ESP32 components implemented in C++20. Some are just wrappers of the [ESP IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) provide by Espressif, others are more complex implementations aiming a more use way/less error prone use.
+This is a collection of ESP32 components implemented in C++20. Some are just wrappers of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) provide by Espressif, others are more complex implementations aiming a more _friendly way_/_less error prone_ use.
 
-All components are provided at `components` directory. At `examples` you can see some examples of how to use this libraries. Some other facility scripts ban be found at `scripts` directory.
+All components are provided at `components` directory. At `examples` you can see some examples of how to use this libraries. Some other facility scripts can be found at `scripts` directory.
+
+The below commands assume that you already installed the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html) and included at path.
 
 ## Adding to your project
 
 First, clone this repository or add as submodule. Then, add to `EXTRA_COMPONENT_DIRS` variable the `components` directory of this project.
 
-For example:
+To add as a submodule:
 ```bash
-# Adding this project as dependency to third-components directory
-$ git submodule add https://github.com/rnascunha/esp-components.git esp-components/
+# Adding this project as dependency to esp-components directory
+$ git submodule add https://github.com/rnascunha/esp-components.git
+$ cd esp-components
+$ git submodule update --init --recursive
 ```
-The `CMakeLists.txt` of your root directory will look like this:
+The `CMakeLists.txt` of your root directory must add the `components` directory, and will look like this:
 
 ```CMake
 # At CMakeLists.txt of the root of your project:
@@ -40,9 +44,9 @@ To **build** all examples you can use the `examples/run.sh` script:
 ```
 $ ./run.sh <root-directory> [1]
 ```
-Where `<root-directory>` is the root directory of this project, and `1`, if defined, will make a fullclean (`idf.py fullclean`) before trying build the project (if not set or set something different of `1` it will be make a normal clean). For example, if you are at the root directory:
+Where `<root-directory>` is the root directory of this project, and `1`, if defined, will make a fullclean (`idf.py fullclean`) before trying build the project (if not set or set something different of `1` it will make a normal `clean``). For example, if you are at the root directory:
 ```
-$ ./examples/run.sh 1
+$ ./examples/run.sh . 1
 ----------------------------RUNNING EXAMPLES-----------------------------
 Date: 2023/09/12 15:40:01
 IDF_Version: ESP-IDF v5.2-dev-1962-g53ff7d43db
