@@ -13,15 +13,28 @@
 
 #include <string_view>
 #include <cstdint>
+#include <optional>
 
 #include "esp_netif.h"
+#include "esp_wps.h"
 
 #include "wifi/common.hpp"
+
 
 namespace wifi {
 namespace station {
 
-esp_netif_t* config(wifi::config&) noexcept;
+esp_netif_t* initiate() noexcept;
+esp_netif_t* initiate(wifi::config&) noexcept;
+
+sys::error config(wifi::config&) noexcept;
+std::optional<wifi::config> config() noexcept;
+
+
+sys::error wps_start() noexcept;
+sys::error wps_enable(const esp_wps_config_t&) noexcept;
+sys::error wps_enable(wps_type) noexcept;
+sys::error wps_disable() noexcept;
 
 class build_config {
  public:

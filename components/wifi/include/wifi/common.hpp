@@ -24,6 +24,7 @@ namespace wifi {
 using config = wifi_config_t;
 
 sys::error start() noexcept;
+sys::error connect() noexcept;
 esp_netif_ip_info_t ip(esp_netif_t*) noexcept;
 
 sys::error register_handler(std::int32_t,

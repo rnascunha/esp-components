@@ -79,12 +79,15 @@ class event_group {
                     BaseType_t *pxHigherPriorityTaskWoken = nullptr) noexcept;
 
   [[nodiscard]] bits
-  get() noexcept;
+  get() const noexcept;
   [[nodiscard]] bits
-  get_from_ISR() noexcept;
+  get_from_ISR() const noexcept;
 
   bits clear(const bits) noexcept;
   BaseType_t clear_from_ISR(const bits) noexcept;
+
+  [[nodiscard]] bool
+  is_set(const bits) const noexcept;
 
   [[nodiscard]] static bool
   is_set(const bits, const bits) noexcept;

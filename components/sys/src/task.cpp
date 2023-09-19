@@ -70,12 +70,12 @@ event_group::set_from_ISR(const bits bits_to_set,
   return xEventGroupSetBitsFromISR(handler_, bits_to_set, pxHigherPriorityTaskWoken);
 }
 
-auto event_group::get() noexcept -> bits {
+auto event_group::get() const noexcept -> bits {
   assert(handler_ != nullptr && "EventGroup handler cant be NULL");
   return xEventGroupGetBits(handler_);
 }
 
-auto event_group::get_from_ISR() noexcept -> bits {
+auto event_group::get_from_ISR() const noexcept -> bits {
   assert(handler_ != nullptr && "EventGroup handler cant be NULL");
   return xEventGroupGetBitsFromISR(handler_);
 }
@@ -88,6 +88,11 @@ auto event_group::clear(const bits bits_to_clear) noexcept -> bits {
 BaseType_t event_group::clear_from_ISR(const bits bits_to_clear) noexcept {
   assert(handler_ != nullptr && "EventGroup handler cant be NULL");
   return xEventGroupClearBitsFromISR(handler_, bits_to_clear);
+}
+
+[[nodiscard]] bool
+event_group::is_set(const bits check) const noexcept {
+  return (get() & check) != 0;
 }
 
 bool

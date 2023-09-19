@@ -50,7 +50,7 @@ extern "C" void app_main() {
                           .sae_h2e_identifier(EXAMPLE_H2E_IDENTIFIER)
                           .sae_pwe_h2e(ESP_WIFI_SAE_MODE);
 
-  auto* net_handler = wifi::station::config(config);
+  auto* net_handler = wifi::station::initiate(config);
   if (net_handler == nullptr) {
     ll.error("Configure WiFi error");
     return;

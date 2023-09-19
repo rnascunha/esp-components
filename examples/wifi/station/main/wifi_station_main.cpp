@@ -42,7 +42,7 @@ extern "C" void app_main() {
                           .authmode(ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD)
                           .sae_pwe_h2e(ESP_WIFI_SAE_MODE);
 
-  auto* net_handler = wifi::station::config(config);
+  auto* net_handler = wifi::station::initiate(config);
   if (net_handler == nullptr) {
     ll.error("Configure WiFi error");
     return;
