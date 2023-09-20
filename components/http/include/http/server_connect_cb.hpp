@@ -71,6 +71,15 @@ struct server_connect_cb {
   server_connect_cb(not_register, StartCallable&& callable) noexcept
    : call{callable} {}
 
+  sys::error start() noexcept {
+    if (!svr.is_connected()) {
+      auto err = svr.start(config);
+      if (!err) call(svr);
+      return err;
+    }
+    return ESP_ERR_HTTPD_HANDLER_EXISTS;
+  }
+
   server        svr;
   config_type   config = detail::default_init<IsSecure>();
   StartCallable call;
@@ -94,12 +103,7 @@ template<bool IsSecure,
 static void server_connect(void* arg,
                            esp_event_base_t,
                            std::int32_t, void*){
-  auto* ssc = (server_connect_cb<IsSecure, Callable>*)arg;
-  if (ssc->svr.is_connected())
-    return;
-  if (ssc->svr.start(ssc->config) == ESP_OK) {
-    ssc->call(ssc->svr);
-  }
+  ((server_connect_cb<IsSecure, Callable>*)arg)->start();
 }
 
 template<bool IsSecure,
