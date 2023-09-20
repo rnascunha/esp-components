@@ -8,6 +8,9 @@
  * @copyright Copyright (c) 2023
  * 
  */
+#ifndef COMPONENTS_WIFI_INCLUDE_WIFI_IMPL_SIMPLE_WPS_RETRY_IPP__
+#define COMPONENTS_WIFI_INCLUDE_WIFI_IMPL_SIMPLE_WPS_RETRY_IPP__
+
 #include <chrono>
 
 #include "sys/task.hpp"
@@ -19,21 +22,26 @@
 #include "wifi/station.hpp"
 #include "wifi/simple_wps_retry.hpp"
 
+#include "wifi/detail/type_traits.hpp"
+
 namespace wifi {
 namespace station {
 
-simple_wps_retry::simple_wps_retry(
+template<typename Callbacks>
+simple_wps_retry<Callbacks>::simple_wps_retry(
   int max_retry /* = std::numeric_limits<int>::max() */) noexcept
   : max_retry_{max_retry} {
   register_handler(*this);
 }
 
-simple_wps_retry::simple_wps_retry(not_register,
+template<typename Callbacks>
+simple_wps_retry<Callbacks>::simple_wps_retry(not_register,
                                      int max_retry /* = std::numeric_limits<int>::max() */) noexcept
  : max_retry_{max_retry} {}
 
+template<typename Callbacks>
 sys::error
-simple_wps_retry::start() noexcept {
+simple_wps_retry<Callbacks>::start() noexcept {
     auto err = wifi::start();
     if (err) return err;
     err = wifi::station::wps_enable(config_);
@@ -41,8 +49,9 @@ simple_wps_retry::start() noexcept {
     return wifi::station::wps_start();
 }
 
+template<typename Callbacks>
 void
-simple_wps_retry::handler(void* arg,
+simple_wps_retry<Callbacks>::handler(void* arg,
             esp_event_base_t event_base,
             std::int32_t event_id,
             void* event_data) noexcept {
@@ -53,13 +62,15 @@ simple_wps_retry::handler(void* arg,
     self->ip_handler(arg, event_id, event_data);
 }
 
-void simple_wps_retry::reset() noexcept {
+template<typename Callbacks>
+void simple_wps_retry<Callbacks>::reset() noexcept {
   retry_ = 0;
   event_.clear(connected | fail);
 }
 
+template<typename Callbacks>
 void 
-simple_wps_retry::wifi_handler(void* arg,
+simple_wps_retry<Callbacks>::wifi_handler(void* arg,
                                int32_t event_id,
                                void* event_data) noexcept {
   switch (event_id) {
@@ -71,8 +82,11 @@ simple_wps_retry::wifi_handler(void* arg,
         wifi::station::config(wps_ap_creds_[ap_idx_]);
         wifi::connect();
         retry_ = 0;
-      } else
+      } else {
         event_.set(fail);
+        if constexpr (wifi::detail::has_fail_v<Callbacks>)
+          Callbacks::fail(arg);
+      }
 
       break;
     case WIFI_EVENT_STA_WPS_ER_SUCCESS:
@@ -98,6 +112,9 @@ simple_wps_retry::wifi_handler(void* arg,
          */
         wifi::station::wps_disable();
         wifi::connect();
+
+        if constexpr (wifi::detail::has_connecting_v<Callbacks>)
+          Callbacks::connecting(arg);
       }
       break;
     case WIFI_EVENT_STA_WPS_ER_FAILED:
@@ -111,30 +128,36 @@ simple_wps_retry::wifi_handler(void* arg,
   }
 }
 
+template<typename Callbacks>
 void
-simple_wps_retry::ip_handler(void* arg,
+simple_wps_retry<Callbacks>::ip_handler(void* arg,
                               std::int32_t event_id,
                               void* event_data) noexcept {
   retry_ = 0;
   event_.set(connected);
+  if constexpr (wifi::detail::has_connected_v<Callbacks>)
+    Callbacks::connected(arg);
 }
 
+template<typename Callbacks>
 bool
-simple_wps_retry::is_connected() const noexcept {
+simple_wps_retry<Callbacks>::is_connected() const noexcept {
   return event_.is_set(connected);
 }
 
+template<typename Callbacks>
 bool
-simple_wps_retry::failed() const noexcept {
+simple_wps_retry<Callbacks>::failed() const noexcept {
   return event_.is_set(fail);
 }
 
-void register_handler(simple_wps_retry& instance) noexcept {
-  wifi::register_handler(ESP_EVENT_ANY_ID, &simple_wps_retry::handler, &instance);
-  sys::event::register_handler(IP_EVENT, IP_EVENT_STA_GOT_IP, &simple_wps_retry::handler, &instance);
+template<typename Callbacks>
+void register_handler(simple_wps_retry<Callbacks>& instance) noexcept {
+  wifi::register_handler(ESP_EVENT_ANY_ID, &simple_wps_retry<Callbacks>::handler, &instance);
+  sys::event::register_handler(IP_EVENT, IP_EVENT_STA_GOT_IP, &simple_wps_retry<Callbacks>::handler, &instance);
 }
 
 }  // namespace station 
 }  // namespace wifi
 
-
+#endif  // COMPONENTS_WIFI_INCLUDE_WIFI_IMPL_SIMPLE_WPS_RETRY_IPP__

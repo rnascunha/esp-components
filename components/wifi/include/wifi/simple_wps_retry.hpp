@@ -24,7 +24,9 @@ namespace wifi {
 namespace station {
 
 struct not_register{};
+struct no_callback{};
 
+template<typename Callbacks = no_callback>
 class simple_wps_retry {
  public:
   static constexpr const unsigned connected = BIT0;
@@ -79,9 +81,12 @@ class simple_wps_retry {
   int ap_creds_num_ = 0;
 };
 
-void register_handler(simple_wps_retry& instance) noexcept;
+template<typename Callbacks>
+void register_handler(simple_wps_retry<Callbacks>& instance) noexcept;
 
 }  // namespace station 
 }  // namespace wifi
+
+#include "impl/simple_wps_retry.ipp"
 
 #endif //  COMPONENTS_WIFI_SIMPLE_WPS_RETRY_HANDLER_HPP_

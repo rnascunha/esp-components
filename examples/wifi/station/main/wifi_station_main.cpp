@@ -26,6 +26,20 @@
 static constexpr const
 lg::log ll{"WiFi Station"};
 
+struct wifi_cb {
+  static void connected(void*) {
+    ESP_LOGI("CB",  "Connected");
+  }
+
+  static void connecting(void*) {
+    ESP_LOGI("CB",  "Connecting");
+  }
+
+  static void fail(void*) {
+    ESP_LOGI("CB",  "FAIL");
+  }
+};
+
 extern "C" void app_main() {
   auto err = sys::default_net_init();
   if (err) {
@@ -48,7 +62,7 @@ extern "C" void app_main() {
     return;
   }
 
-  wifi::station::simple_wifi_retry retry{EXAMPLE_ESP_MAXIMUM_RETRY};
+  wifi::station::simple_wifi_retry<wifi_cb> retry{EXAMPLE_ESP_MAXIMUM_RETRY};
   err = wifi::start();
   if (err) {
     ll.error("Connect WiFi error [{:b}]", err);

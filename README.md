@@ -29,6 +29,10 @@ set(EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS} "${CMAKE_SOURCE_DIR}/esp-compon
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(project-name)
 ```
+If you already have `esp-components` as submodule, and want to update from server, type at root directory:
+```bash
+$ git submodule update --remote
+```
 
 ## Examples
 

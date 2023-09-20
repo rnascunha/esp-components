@@ -22,6 +22,20 @@ const char* TAG = "SIMPLE_WPS_STATION";
 
 #define MAX_RETRY_ATTEMPTS CONFIG_ESP_MAXIMUM_RETRY
 
+struct wifi_cb {
+  static void connected(void*) {
+    ESP_LOGI("CB",  "Connected");
+  }
+
+  static void connecting(void*) {
+    ESP_LOGI("CB",  "Connecting");
+  }
+
+  static void fail(void*) {
+    ESP_LOGI("CB",  "FAIL");
+  }
+};
+
 extern "C" void app_main() {
   auto err = sys::default_net_init();
   if (err) {
@@ -38,7 +52,7 @@ extern "C" void app_main() {
     return;
   }
 
-  wifi::station::simple_wps_retry retry(MAX_RETRY_ATTEMPTS);
+  wifi::station::simple_wps_retry<wifi_cb> retry(MAX_RETRY_ATTEMPTS);
   err = retry.start();
   if (err) {
     ESP_LOGE(TAG, "Erro initializing WPS WiFi [%d]", err.value());

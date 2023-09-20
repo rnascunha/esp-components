@@ -16,6 +16,7 @@
 
 #include "sys/event.hpp"
 #include "sys/time.hpp"
+#include "sys/task.hpp"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,7 +26,9 @@ namespace wifi {
 namespace station {
 
 struct not_register{};
+struct no_callback{};
 
+template<typename Callbacks = no_callback>
 class simple_wifi_retry {
  public:
   static constexpr const unsigned connected = BIT0;
@@ -35,13 +38,10 @@ class simple_wifi_retry {
   simple_wifi_retry(not_register, int max_retry = std::numeric_limits<int>::max()) noexcept;
 
   EventBits_t
-  wait(sys::time::ticks wait_time = sys::time::max) noexcept;
+  wait() noexcept;
   
-  template<typename Rep, typename Ratio>
   EventBits_t
-  wait(std::chrono::duration<Rep, Ratio> duration) noexcept {
-    return wait(sys::time::to_ticks(duration));
-  }
+  wait(sys::time::tick_time auto) noexcept;
 
   static void handler(void* arg,
                esp_event_base_t event_base,
@@ -63,14 +63,17 @@ class simple_wifi_retry {
                     std::int32_t event_id,
                     void* event_data) noexcept;
 
-  EventGroupHandle_t event_ = xEventGroupCreate();
+  sys::event_group event_{};
   int max_retry_;
   int retry_ = 0;
 };
 
-void register_handler(simple_wifi_retry& instance) noexcept;
+template<typename Callbacks>
+void register_handler(simple_wifi_retry<Callbacks>& instance) noexcept;
 
 }  // namespace station 
 }  // namespace wifi
+
+#include "impl/simple_wifi_retry.ipp"
 
 #endif //  COMPONENTS_WIFI_SIMPLE_RETRY_HANDLER_HPP_
