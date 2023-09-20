@@ -46,7 +46,7 @@ extern "C" void app_main() {
   }
   ESP_LOGI(TAG, "start wps...");
 
-  retry.wait(sys::time::max);
+  retry.wait();
 
   if (retry.is_connected()) {
     auto config = *wifi::station::config();

@@ -36,6 +36,14 @@ class simple_wps_retry {
   sys::error start() noexcept;
 
   EventBits_t
+  wait() noexcept {
+    return event_.wait(connected | fail,
+                       sys::time::max,
+                       pdFALSE,
+                       pdFALSE);
+  }
+
+  EventBits_t
   wait(sys::time::tick_time auto duration) noexcept {
     return event_.wait(connected | fail,
                        duration,
