@@ -74,7 +74,7 @@ class simple_wps_retry {
   sys::event_group event_{};
   int max_retry_;
   int retry_ = 0;
-  int ap_idx_ = 1;
+  int ap_idx_ = 0;
   esp_wps_config_t config_ = WPS_CONFIG_INIT_DEFAULT(WPS_TYPE_PBC);
   wifi_config_t wps_ap_creds_[MAX_WPS_AP_CRED];
   int ap_creds_num_ = 0;

@@ -106,6 +106,7 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
         wifi_event_sta_wps_er_success_t *evt =
             (wifi_event_sta_wps_er_success_t *)event_data;
 
+        ap_creds_num_ = 1;
         if (evt) {
           ap_creds_num_ = evt->ap_cred_cnt;
           for (int i = 0; i < ap_creds_num_; i++) {
