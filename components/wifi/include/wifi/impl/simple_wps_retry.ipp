@@ -74,6 +74,10 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
                                int32_t event_id,
                                void* event_data) noexcept {
   switch (event_id) {
+    case WIFI_EVENT_STA_START:
+      if constexpr (wifi::detail::has_connecting_v<Callbacks>)
+        Callbacks::connecting(arg);
+      break;
     case WIFI_EVENT_STA_DISCONNECTED:
       if (retry_ < max_retry_) {
         wifi::connect();
@@ -112,9 +116,6 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
          */
         wifi::station::wps_disable();
         wifi::connect();
-
-        if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-          Callbacks::connecting(arg);
       }
       break;
     case WIFI_EVENT_STA_WPS_ER_FAILED:
@@ -122,6 +123,8 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
       wifi::station::wps_disable();
       wifi::station::wps_enable(config_);
       wifi::station::wps_start();
+      if constexpr (wifi::detail::has_connecting_v<Callbacks>)
+        Callbacks::connecting(arg);
       break;
     default:
       break;

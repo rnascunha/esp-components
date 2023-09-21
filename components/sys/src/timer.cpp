@@ -23,6 +23,7 @@ namespace sys {
 timer::timer(const esp_timer_create_args_t& args) noexcept {
   if(esp_timer_create(&args, &handler_))
     handler_ = nullptr;
+  assert(handler_ != nullptr && "Error initializing timer");
 }
 
 timer::~timer() noexcept {
