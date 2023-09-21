@@ -24,7 +24,7 @@ struct has_connected<Func,
                    std::enable_if_t<
                     std::is_invocable_v<
                       decltype(Func::connected),
-                      void*>
+                      void*, void*>
                     >
                   > : std::true_type{};
 
@@ -40,7 +40,7 @@ struct has_connecting<Func,
                    std::enable_if_t<
                     std::is_invocable_v<
                       decltype(Func::connecting),
-                      void*>
+                      void*, void*>
                     >
                   > : std::true_type{};
 
@@ -56,7 +56,7 @@ struct has_fail<Func,
                    std::enable_if_t<
                     std::is_invocable_v<
                       decltype(Func::fail),
-                      void*>
+                      void*, void*>
                     >
                   > : std::true_type{};
 

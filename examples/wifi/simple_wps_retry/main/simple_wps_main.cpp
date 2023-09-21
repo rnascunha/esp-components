@@ -23,15 +23,15 @@ const char* TAG = "SIMPLE_WPS_STATION";
 #define MAX_RETRY_ATTEMPTS CONFIG_ESP_MAXIMUM_RETRY
 
 struct wifi_cb {
-  static void connected(void*) {
+  static void connected(void*, void*) {
     ESP_LOGI("CB",  "Connected");
   }
 
-  static void connecting(void*) {
+  static void connecting(void*, void*) {
     ESP_LOGI("CB",  "Connecting");
   }
 
-  static void fail(void*) {
+  static void fail(void*, void*) {
     ESP_LOGI("CB",  "FAIL");
   }
 };

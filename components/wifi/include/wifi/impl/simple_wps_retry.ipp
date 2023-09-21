@@ -82,9 +82,11 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
   switch (event_id) {
     case WIFI_EVENT_STA_START:
       if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-        Callbacks::connecting(arg);
+        Callbacks::connecting(arg, event_data);
       break;
     case WIFI_EVENT_STA_DISCONNECTED:
+      if constexpr (wifi::detail::has_connecting_v<Callbacks>)
+          Callbacks::connecting(arg, event_data);
       if (retry_ < max_retry_) {
         wifi::connect();
         ++retry_;
@@ -95,7 +97,7 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
       } else {
         event_.set(fail);
         if constexpr (wifi::detail::has_fail_v<Callbacks>)
-          Callbacks::fail(arg);
+          Callbacks::fail(arg, event_data);
       }
 
       break;
@@ -129,8 +131,6 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
       wifi::station::wps_disable();
       wifi::station::wps_enable(config_);
       wifi::station::wps_start();
-      if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-        Callbacks::connecting(arg);
       break;
     default:
       break;
@@ -143,9 +143,10 @@ simple_wps_retry<Callbacks>::ip_handler(void* arg,
                               std::int32_t event_id,
                               void* event_data) noexcept {
   retry_ = 0;
+  ap_creds_num_ = 0;
   event_.set(connected);
   if constexpr (wifi::detail::has_connected_v<Callbacks>)
-    Callbacks::connected(arg);
+    Callbacks::connected(arg, event_data);
 }
 
 template<typename Callbacks>

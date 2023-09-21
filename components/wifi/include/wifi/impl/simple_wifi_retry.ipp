@@ -91,16 +91,16 @@ simple_wifi_retry<Callbacks>::wifi_handler(void* arg,
   if (event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
     if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-      Callbacks::connecting(arg);
+      Callbacks::connecting(arg, event_data);
   } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
     if (retry_++ < max_retry_) {
       esp_wifi_connect();
       if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-        Callbacks::connecting(arg);
+        Callbacks::connecting(arg, event_data);
     } else {
       event_.set(fail);
       if constexpr (wifi::detail::has_fail_v<Callbacks>)
-        Callbacks::fail(arg);
+        Callbacks::fail(arg, event_data);
     }
   }
 }
@@ -113,7 +113,7 @@ simple_wifi_retry<Callbacks>::ip_handler(void* arg,
   retry_ = 0;
   event_.set(connected);
   if constexpr (wifi::detail::has_connected_v<Callbacks>)
-    Callbacks::connected(arg);
+    Callbacks::connected(arg, event_data);
 }
 
 template<typename Callbacks>
