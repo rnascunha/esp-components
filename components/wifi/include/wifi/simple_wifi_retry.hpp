@@ -25,17 +25,16 @@
 namespace wifi {
 namespace station {
 
-struct not_register{};
-struct no_callback{};
-
-template<typename Callbacks = no_callback>
+template<typename Callbacks = wifi::no_callback>
 class simple_wifi_retry {
  public:
   static constexpr const unsigned connected = BIT0;
   static constexpr const unsigned fail = BIT1;
 
   simple_wifi_retry(int max_retry = std::numeric_limits<int>::max()) noexcept;
-  simple_wifi_retry(not_register, int max_retry = std::numeric_limits<int>::max()) noexcept;
+  simple_wifi_retry(wifi::not_register, int max_retry = std::numeric_limits<int>::max()) noexcept;
+
+  ~simple_wifi_retry() noexcept;
 
   EventBits_t
   wait() noexcept;

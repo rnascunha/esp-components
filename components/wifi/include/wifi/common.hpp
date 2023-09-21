@@ -31,6 +31,10 @@ sys::error register_handler(std::int32_t,
                             esp_event_handler_t,
                             void* = nullptr) noexcept;
 
+// tags used through the application
+struct not_register{};
+struct no_callback{};
+
 }  // namespace wifi
 
 #endif  // COMPONENTS_WIFI_COMMON_HPP_

@@ -35,9 +35,15 @@ simple_wps_retry<Callbacks>::simple_wps_retry(
 }
 
 template<typename Callbacks>
-simple_wps_retry<Callbacks>::simple_wps_retry(not_register,
+simple_wps_retry<Callbacks>::simple_wps_retry(wifi::not_register,
                                      int max_retry /* = std::numeric_limits<int>::max() */) noexcept
  : max_retry_{max_retry} {}
+
+template<typename Callbacks>
+simple_wps_retry<Callbacks>::~simple_wps_retry() noexcept {
+  sys::event::unregister_handler(WIFI_EVENT, ESP_EVENT_ANY_ID, &simple_wps_retry<Callbacks>::handler);
+  sys::event::unregister_handler(IP_EVENT, IP_EVENT_STA_GOT_IP, &simple_wps_retry<Callbacks>::handler);
+}
 
 template<typename Callbacks>
 sys::error

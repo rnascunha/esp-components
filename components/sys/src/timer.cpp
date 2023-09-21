@@ -21,13 +21,18 @@
 namespace sys {
 
 timer::timer(const esp_timer_create_args_t& args) noexcept {
-  if(esp_timer_create(&args, &handler_))
+  if(open(args))
     handler_ = nullptr;
   assert(handler_ != nullptr && "Error initializing timer");
 }
 
 timer::~timer() noexcept {
   if (handler_ != nullptr) erase();
+}
+
+sys::error
+timer::open(const esp_timer_create_args_t& args) noexcept {
+  return esp_timer_create(&args, &handler_);
 }
 
 sys::error timer::stop() noexcept {

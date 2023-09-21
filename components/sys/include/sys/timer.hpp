@@ -25,8 +25,11 @@ class timer {
  public:
   using handle = esp_timer_handle_t;
 
+  timer() noexcept = default;
   timer(const esp_timer_create_args_t&) noexcept;
   ~timer() noexcept;
+
+  sys::error open(const esp_timer_create_args_t&) noexcept;
 
   template<typename Rep, typename Ratio>
   sys::error start_once(std::chrono::duration<Rep, Ratio> time) noexcept {
@@ -50,7 +53,7 @@ class timer {
   sys::error erase() noexcept;
 
  private:
-  handle handler_;
+  handle handler_ = nullptr;
 };
 
 }  // namespace sys
