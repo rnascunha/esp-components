@@ -133,6 +133,9 @@ simple_wps_retry<Callbacks>::wifi_handler(void* arg,
       wifi::station::wps_enable(config_);
       wifi::station::wps_start();
       break;
+    case WIFI_EVENT_STA_CONNECTED:
+      if constexpr (wifi::detail::has_station_connected_v<Callbacks>)
+        Callbacks::station_connected(arg, event_data);
     default:
       break;
   }

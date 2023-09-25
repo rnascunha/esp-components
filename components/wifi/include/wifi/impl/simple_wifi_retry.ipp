@@ -88,20 +88,28 @@ void
 simple_wifi_retry<Callbacks>::wifi_handler(void* arg,
                                 std::int32_t event_id,
                                 void* event_data) noexcept {
-  if (event_id == WIFI_EVENT_STA_START) {
-    esp_wifi_connect();
-    if constexpr (wifi::detail::has_connecting_v<Callbacks>)
-      Callbacks::connecting(arg, event_data);
-  } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    if (retry_++ < max_retry_) {
+  swtich(event_id) {
+    case WIFI_EVENT_STA_START:
       esp_wifi_connect();
       if constexpr (wifi::detail::has_connecting_v<Callbacks>)
         Callbacks::connecting(arg, event_data);
-    } else {
-      event_.set(fail);
-      if constexpr (wifi::detail::has_fail_v<Callbacks>)
-        Callbacks::fail(arg, event_data);
-    }
+      break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+      if (retry_++ < max_retry_) {
+        esp_wifi_connect();
+        if constexpr (wifi::detail::has_connecting_v<Callbacks>)
+          Callbacks::connecting(arg, event_data);
+      } else {
+        event_.set(fail);
+        if constexpr (wifi::detail::has_fail_v<Callbacks>)
+          Callbacks::fail(arg, event_data);
+      }
+      break;
+      case WIFI_EVENT_STA_CONNECTED:
+        if constexpr (wifi::detail::has_station_connected_v<Callbacks>)
+          Callbacks::station_connected(arg, event_data);
+      default:
+        break;
   }
 }
 

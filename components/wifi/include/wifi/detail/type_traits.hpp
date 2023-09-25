@@ -17,6 +17,22 @@ namespace wifi {
 namespace detail {
 
 template<class Func, class = void>
+struct has_station_connected : std::false_type{};
+
+template<class Func>
+struct has_station_connected<Func,
+                   std::enable_if_t<
+                    std::is_invocable_v<
+                      decltype(Func::station_connected),
+                      void*, void*>
+                    >
+                  > : std::true_type{};
+
+template<class Func>
+static constexpr const bool
+has_station_connected_v = has_station_connected<Func>::value;
+
+template<class Func, class = void>
 struct has_connected : std::false_type{};
 
 template<class Func>
