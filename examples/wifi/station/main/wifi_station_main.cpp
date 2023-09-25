@@ -16,6 +16,7 @@
 #include "sys/error.hpp"
 #include "sys/sys.hpp"
 #include "sys/time.hpp"
+#include "sys/net.hpp"
 
 #include "wifi/common.hpp"
 #include "wifi/station.hpp"
@@ -75,7 +76,7 @@ extern "C" void app_main() {
   retry.wait();
 
   if (retry.is_connected()) {
-    ll.info("Connected! IP: {}", wifi::ip(net_handler).ip);
+    ll.info("Connected! IP: {}", sys::net::ip(net_handler).ip);
   } else if (retry.failed()) {
     ll.warn("Failed");
     return;

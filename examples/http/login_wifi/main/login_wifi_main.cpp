@@ -17,6 +17,7 @@
 #include "sys/sys.hpp"
 #include "sys/time.hpp"
 #include "sys/nvs.hpp"
+#include "sys/net.hpp"
 
 #include "wifi/common.hpp"
 #include "wifi/station.hpp"
@@ -107,7 +108,7 @@ extern "C" void app_main() {
     return;
   }
 
-  ll.info("Connected! IP: {}", wifi::ip(net_handler).ip);
+  ll.info("Connected! IP: {}", sys::net::ip(net_handler).ip);
 
 #if CONFIG_ENABLE_MDNS == 1
   init_mdns();

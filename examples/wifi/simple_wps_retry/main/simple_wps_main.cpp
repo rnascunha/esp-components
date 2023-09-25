@@ -13,6 +13,8 @@
 #include "sys/error.hpp"
 #include "sys/sys.hpp"
 #include "sys/event.hpp"
+#include "sys/net.hpp"
+
 #include "wifi/station.hpp"
 
 #include "wifi/simple_wps_retry.hpp"
@@ -64,7 +66,7 @@ extern "C" void app_main() {
 
   if (retry.is_connected()) {
     auto config = *wifi::station::config();
-    auto ip = wifi::ip(net_handler).ip;
+    auto ip = sys::net::ip(net_handler).ip;
     ESP_LOGI(TAG, "Connected! SSID: %s, Password: %s, IP:" IPSTR,
                   (const char*)config.sta.ssid,
                   (const char*)config.sta.password,

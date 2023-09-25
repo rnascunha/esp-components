@@ -17,6 +17,7 @@
 #include "lg/format_types.hpp"
 
 #include "sys/sys.hpp"
+#include "sys/net.hpp"
 
 #include "wifi/common.hpp"
 #include "wifi/station.hpp"
@@ -141,7 +142,7 @@ extern "C" void app_main() {
   wifi.wait();
 
   if (wifi.is_connected()) {
-    ll.info("Connected! IP: {}", wifi::ip(net_handler).ip);
+    ll.info("Connected! IP: {}", sys::net::ip(net_handler).ip);
   } else {
     ll.info("Failed");
     return;
