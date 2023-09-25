@@ -88,7 +88,7 @@ void
 simple_wifi_retry<Callbacks>::wifi_handler(void* arg,
                                 std::int32_t event_id,
                                 void* event_data) noexcept {
-  swtich(event_id) {
+  switch(event_id) {
     case WIFI_EVENT_STA_START:
       esp_wifi_connect();
       if constexpr (wifi::detail::has_connecting_v<Callbacks>)
