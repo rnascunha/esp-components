@@ -1,7 +1,8 @@
 {
     "env": {
         "IDF_PATH": "/home/rnascunha/dev/toolchain/esp-idf/esp-idf/",
-        "XTENSA_ESP32_PATH": "/home/rnascunha/.espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208"
+        "XTENSA_ESP32_PATH": "/home/rnascunha/.espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208",
+        "PROJECT_DIRECTORY": "${workspaceFolder}/examples/ota/websocket"
     },
     "configurations": [
         {
@@ -13,19 +14,19 @@
             "defines": [
                 "-DESP_PLATAFORM=1"
             ],
-            "compilerPath": "/home/rnascunha/.espressif/tools/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/xtensa-esp32-elf-cc",
+            "compilerPath": "${XTENSA_ESP32_PATH}/xtensa-esp32-elf/bin/xtensa-esp32-elf-c++",
             "cStandard": "c23",
             "cppStandard": "c++23",
             "forcedInclude": [
-                "/home/rnascunha/dev/workspaces/esp-components/build/config/sdkconfig.h"
+                "${PROJECT_DIRECTORY}/build/config/sdkconfig.h"
             ],
-            "compileCommands": "/home/rnascunha/dev/workspaces/esp-components/build/compile_commands.json",
-            "compilerPathInCppPropertiesJson": "${XTENSA_ESP32_PATH}/xtensa-esp32-elf/bin/xtensa-esp32-elf-cc",
-            "compileCommandsInCppPropertiesJson": "${workspaceFolder}/build/compile_commands.json",
+            "compileCommands": "${PROJECT_DIRECTORY}/build/compile_commands.json",
+            "compilerPathInCppPropertiesJson": "${XTENSA_ESP32_PATH}/xtensa-esp32-elf/bin/xtensa-esp32-elf-c++",
+            "compileCommandsInCppPropertiesJson": "${PROJECT_DIRECTORY}/build/compile_commands.json",
             "mergeConfigurations": false,
             "browse": {
                 "path": [
-                    "/home/rnascunha/dev/workspaces/esp-components/main/**",
+                    "${PROJECT_DIRECTORY}/main/**",
                     "/home/rnascunha/dev/workspaces/esp-components/components/**",
                     "/home/rnascunha/dev/toolchain/esp-idf/esp-idf//components/**",
                     "${workspaceFolder}"
@@ -41,7 +42,7 @@
             "defines": [],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
-            "cppStandard": "c++14",
+            "cppStandard": "c++23",
             "intelliSenseMode": "linux-clang-x64"
         }
     ],

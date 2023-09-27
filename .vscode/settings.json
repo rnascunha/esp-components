@@ -1,7 +1,10 @@
 {
   "files.associations": {
     "*.cpp": "cpp",
+    "*.projbuild": "kconfig",
     "type_traits": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "*.tcc": "cpp",
+    "fstream": "cpp"
   }
 }

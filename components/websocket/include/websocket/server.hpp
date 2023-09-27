@@ -110,6 +110,10 @@ class request {
   sys::error
   send(data&) noexcept;
 
+  void* context() noexcept {
+    return native()->user_ctx;
+  }
+
   [[nodiscard]] int
   socket() noexcept;
   [[nodiscard]] httpd_req_t*
@@ -129,6 +133,28 @@ struct client {
   sys::error send(frame&) noexcept;
   sys::error send(data&) noexcept;
 
+  template<typename T, std::size_t N>
+  sys::error send(std::span<const T, N> const data,
+                  httpd_ws_type_t type = HTTPD_WS_TYPE_BINARY) noexcept {
+    frame frm = {
+      .payload = data.data(),
+      .len = data.size_bytes(),
+      .type = type
+    };
+    return send(frm);
+  }
+
+  template<typename T>
+  sys::error send(const T& data, 
+                  httpd_ws_type_t type = HTTPD_WS_TYPE_BINARY) noexcept {
+    frame frm = {};
+    frm.payload = (std::uint8_t*)&data,
+    frm.len = sizeof(data),
+    frm.type = type;
+
+    return send(frm);
+  }
+
   bool is_valid() const noexcept {
     return hd != nullptr;
   }
@@ -138,8 +164,46 @@ struct client {
     fd = 0;  
   }
 
+  void close() noexcept {
+    httpd_sess_trigger_close(hd, fd);
+    hd = nullptr;
+    fd = 0;
+  }
+
+  bool operator==(const client& c) const noexcept {
+    return hd == c.hd && fd == c.fd;
+  }
+
+  bool operator!=(const client& c) const noexcept {
+    return !(*this == c);
+  }
+
   httpd_handle_t hd = nullptr;
   int            fd = 0;
+};
+
+template<typename T>
+sys::error
+send_all(http::server& server,
+         const T& packet, 
+         httpd_ws_type_t type = HTTPD_WS_TYPE_BINARY) noexcept {
+  std::size_t size = 7;
+  int clients[7];
+  auto err = server.client_list(size, clients);
+  if (err) return err;
+  if (size == 0)
+    return err;
+  
+  websocket::frame pkt{};
+  
+  pkt.payload = (std::uint8_t*)&packet;
+  pkt.len = sizeof(packet);
+  pkt.type = type;
+
+  for (int i = 0; i < size; ++i)
+    websocket::client(server.native(), clients[i]).send(pkt);
+
+  return err;
 };
 
 sys::error
