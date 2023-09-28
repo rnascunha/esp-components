@@ -24,6 +24,22 @@ namespace sys {
 
 using task_handle = TaskHandle_t;
 
+inline void
+task_delete(task_handle handler = nullptr) noexcept {
+  vTaskDelete(handler);
+}
+
+inline task_handle
+task_create(TaskFunction_t func,
+            std::uint32_t stack_size,
+            UBaseType_t priority,
+            void* parameter = nullptr,
+            const char* name = "") noexcept {
+  task_handle handler;
+  xTaskCreate(func, name, stack_size, parameter, priority, &handler);
+  return handler;
+}
+
 /**
  * @see https://www.freertos.org/ulTaskNotifyTake.html
  */
@@ -31,6 +47,12 @@ std::uint32_t
 notify_wait(time::tick_time auto duration, BaseType_t clear_on_exit = pdTRUE) noexcept {
   return ulTaskNotifyTake(clear_on_exit, time::to_ticks(duration));
 }
+
+inline std::uint32_t
+notify_wait(BaseType_t clear_on_exit = pdTRUE) noexcept {
+  return ulTaskNotifyTake(clear_on_exit, time::max);
+}
+
 
 /**
  * @see https://www.freertos.org/xTaskNotifyGive.html

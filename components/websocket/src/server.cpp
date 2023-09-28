@@ -21,10 +21,7 @@ request::receive(frame& frame,
                  std::span<std::uint8_t> buffer) noexcept {
   std::memset(&frame, 0, sizeof(frame));
   frame.payload = buffer.data();
-  sys::error ret = httpd_ws_recv_frame(req_, &frame, buffer.size());
-  if (ret)
-    return ret;
-  return ESP_OK;
+  return httpd_ws_recv_frame(req_, &frame, buffer.size());
 }
 
 sys::error

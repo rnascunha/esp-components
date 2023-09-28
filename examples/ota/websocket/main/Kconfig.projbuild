@@ -64,4 +64,10 @@ menu "Example Configuration"
             bool "WAPI PSK"
     endchoice
 
+  config OTA_BUFFER_SIZE
+    int "OTA buffer size"
+    range 64 4098
+    default 1024
+    help
+      Define the size of the buffer to receive the remote image.
 endmenu

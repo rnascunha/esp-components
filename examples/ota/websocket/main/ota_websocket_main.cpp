@@ -10,6 +10,8 @@
  */
 #include <chrono>
 
+#include "esp_log.h"
+
 #include "sys/error.hpp"
 #include "sys/sys.hpp"
 #include "sys/time.hpp"
@@ -22,9 +24,13 @@
 
 #include "websocket/server.hpp"
 
+#include "ota/websocket.hpp"
+
 #include "wifi_args.hpp"
 
-#include "resource.cpp"
+static constexpr const char* TAG = "WS OTA MAIN";
+
+#define BUFFER_SIZE (CONFIG_OTA_BUFFER_SIZE + sizeof(ota::state_request))
 
 extern "C" void app_main() {
   auto err = sys::default_net_init();
@@ -51,7 +57,7 @@ extern "C" void app_main() {
   wifi::station::simple_wifi_retry retry{EXAMPLE_ESP_MAXIMUM_RETRY};
   http::server_connect_cb([](auto& server) {
     server.register_uri(
-      websocket::uri<ws_cb>{
+      websocket::uri<ota::ws_cb<BUFFER_SIZE>>{
         .uri            = "/ota",
         .user_ctx       = &server,
         .control_frames = false,

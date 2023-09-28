@@ -30,7 +30,11 @@ enum class error_code : std::uint8_t {
   already_running = 1,
   not_running,
   wrong_user,
-  name_too_long
+  get_partiotion_error,
+  packet_size_error,
+  invalid_version,
+  same_version,
+  name_too_long,
 };
 
 enum class abort_reason : std::uint8_t {
@@ -48,15 +52,19 @@ struct error_packet {
 struct start_request {
   command       cmd;
   std::uint32_t total_size;
-  const char*   name;
 } ATTR_PACKED;
 
 struct state_packet {
   command       cmd;
-  std::uint8_t  finished:1;
-  std::uint8_t  :7;     // no use
   std::uint32_t size_rcv;
-};
+  std::uint32_t size_request;
+} ATTR_PACKED;
+
+struct state_request {
+  command       cmd;
+  std::uint8_t  is_end:1;
+  std::uint8_t  :7;
+} ATTR_PACKED;
 
 struct abort_request {
   command       cmd;
@@ -74,7 +82,9 @@ send_error(websocket::client, error_code) noexcept;
 sys::error
 send_abort(abort_reason, http::server&) noexcept;
 sys::error
-send_state(bool is_end, std::uint32_t size_rcv, http::server&) noexcept;
+send_state(std::uint32_t size_rcv, http::server&) noexcept;
+sys::error
+send_state(websocket::client&, std::uint32_t size_rcv, std::uint32_t size_request) noexcept;
 
 }  // namespace ota
 
