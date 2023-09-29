@@ -39,12 +39,4 @@ error default_net_init() noexcept {
   return esp_event_loop_create_default();
 }
 
-void delay(sys::time::ticks ticks) noexcept {
-  return vTaskDelay(ticks);
-}
-
-void reboot() noexcept {
-  esp_restart();
-}
-
 }  // namespace sys

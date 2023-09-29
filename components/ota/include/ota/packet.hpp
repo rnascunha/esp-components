@@ -23,6 +23,7 @@ enum class command : std::uint8_t {
   start = 1,
   state,
   abort,
+  action,
   error = 10,
 };
 
@@ -31,15 +32,30 @@ enum class error_code : std::uint8_t {
   already_running,
   not_running,
   wrong_user,
-  get_partiotion_error,
   packet_size_error,
-  invalid_version,
-  same_version,
+  no_command_found,
+  no_action_found,
+  action_wrong_time,
 };
 
 enum class abort_reason : std::uint8_t {
-  user_request = 1,
-  user_disconnect
+  no_abort = 0,
+  user_request,
+  user_disconnect,
+  get_partiotion_error,
+  invalid_version,
+  same_version,
+  timeout,
+  ota_begin_error,
+  ota_write_error,
+  ota_end_error,
+  set_partition_error,
+};
+
+enum class action : std::uint8_t {
+  reset = 0,
+  validate_image,
+  invalidate_image,
 };
 
 #define ATTR_PACKED __attribute__((packed, aligned(1)))
@@ -80,6 +96,17 @@ struct abort_packet {
   abort_reason  reason;
 } ATTR_PACKED;
 
+struct action_packet {
+  command       cmd;
+  action        act;
+  std::int32_t  err;
+} ATTR_PACKED;
+
+struct action_request {
+  command       cmd;
+  action        act;
+} ATTR_PACKED;
+
 #undef ATTR_PACKED
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
@@ -89,7 +116,13 @@ send_error(websocket::client, error_code) noexcept;
 sys::error
 send_abort(websocket::client, abort_reason) noexcept;
 sys::error
-send_state(websocket::client, std::uint32_t size_rcv, std::uint32_t size_request) noexcept;
+send_state(websocket::client,
+           std::uint32_t size_rcv,
+           std::uint32_t size_request) noexcept;
+sys::error
+send_action(websocket::client,
+            action,
+            std::int32_t) noexcept;
 
 #endif  // CONFIG_HTTPD_WS_SUPPORT
 

@@ -22,13 +22,15 @@ namespace sys {
 
 error default_net_init() noexcept;
 
-void delay(sys::time::ticks) noexcept;
-template<typename Rep, typename Ratio>
-void delay(std::chrono::duration<Rep, Ratio> duration) noexcept {
-  return delay(time::to_ticks(duration));
+constexpr void
+delay(sys::time::tick_time auto duration) noexcept {
+  return vTaskDelay(time::to_ticks(duration));
 }
 
-void reboot() noexcept;
+inline void
+reboot() noexcept {
+  esp_restart();
+}
 
 }  // namespace sys
 

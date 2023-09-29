@@ -35,12 +35,12 @@ namespace ota {
 static constexpr const char*
 TAG = "OTA WS";
 
-static error_code
+static abort_reason
 check_update_image(const std::uint8_t* data,
                    bool check_last_invalid,
                    bool check_same_version) noexcept {
   if (!check_last_invalid && !check_same_version)
-    return error_code::success;
+    return abort_reason::no_abort;
   
   esp_app_desc_t new_app_info;
   memcpy(&new_app_info, &data[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
@@ -59,7 +59,7 @@ check_update_image(const std::uint8_t* data,
       ESP_LOGW(TAG, "New version is the same as invalid version.");
       ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
       ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
-      return error_code::invalid_version;
+      return abort_reason::invalid_version;
     }
   }
 
@@ -69,10 +69,10 @@ check_update_image(const std::uint8_t* data,
     esp_ota_get_partition_description(running, &running_app_info);
     if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
       ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
-      return error_code::same_version;
+      return abort_reason::same_version;
     }
   }
-  return error_code::success;
+  return abort_reason::no_abort;
 }
 
 template<std::size_t Size>
@@ -82,7 +82,9 @@ static void ota_task(void* arg) {
   info<Size>& inf = *((info<Size>*)arg);
   esp_ota_handle_t update_handle = 0;
   
-  auto abort_task = [&inf, &update_handle]{
+  auto abort_task = [&inf, &update_handle](abort_reason reason = abort_reason::no_abort){
+    if (reason != abort_reason::no_abort)
+      send_abort(inf.client, reason);
     inf.client.clear();
     inf.task = nullptr;
     if (update_handle != 0)
@@ -93,8 +95,7 @@ static void ota_task(void* arg) {
   const esp_partition_t *update_partition = esp_ota_get_next_update_partition(nullptr);
   if (update_partition == nullptr) {
     ESP_LOGE(TAG, "Get partition error");
-    send_error(inf.client, error_code::get_partiotion_error);
-    abort_task();
+    abort_task(abort_reason::get_partiotion_error);
   }
   ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%" PRIx32,
             update_partition->subtype, update_partition->address);
@@ -108,7 +109,7 @@ static void ota_task(void* arg) {
     send_state(inf.client, binary_file_length, info<Size>::buffer_size - sizeof(state_request));
     if (sys::notify_wait(timeout) == 0) {
       ESP_LOGW(TAG, "Timeout! Aborting");
-      abort_task();
+      abort_task(abort_reason::timeout);
     }
   
     if (!inf.client.is_valid()) {
@@ -122,24 +123,24 @@ static void ota_task(void* arg) {
     if (image_header_was_checked == false) {
       ESP_LOGI(TAG, "Checking image");
 
-      auto code = check_update_image(data, inf.check_last_invalid, inf.check_same_version);
-      if (code != error_code::success) {
-        send_error(inf.client, code);
-        abort_task();
+      auto reason = check_update_image(data, inf.check_last_invalid, inf.check_same_version);
+      if (reason != abort_reason::no_abort) {
+        ESP_LOGE(TAG, "Image check error [%u]", (std::uint8_t)reason);
+        abort_task(reason);
       }
       image_header_was_checked = true;
 
       sys::error err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
       if (err) {
         ESP_LOGE(TAG, "esp_ota_begin failed (%s)", err.message());
-        abort_task();
+        abort_task(abort_reason::ota_begin_error);
       }
       ESP_LOGI(TAG, "esp_ota_begin succeeded");
     }
     sys::error err = esp_ota_write(update_handle, (const void *)data, data_read);
     if (err) {
       ESP_LOGE(TAG, "Error writting ota data");
-      abort_task();
+      abort_task(abort_reason::ota_write_error);
     }
     binary_file_length += data_read;
     ESP_LOGD(TAG, "Written image length %d", binary_file_length);
@@ -152,13 +153,13 @@ static void ota_task(void* arg) {
   sys::error err = esp_ota_end(update_handle);
   if (err) {
     ESP_LOGE(TAG, "esp_ota_end failed (%s)!", err.message());
-    abort_task();
+    abort_task(abort_reason::ota_end_error);
   }
 
   err = esp_ota_set_boot_partition(update_partition);
   if (err) {
     ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", err.message());
-    abort_task();
+    abort_task(abort_reason::set_partition_error);
   }
   ESP_LOGI(TAG, "OTA task finished");
 
@@ -211,8 +212,11 @@ ws_cb<Size>::on_data(websocket::request req) noexcept {
       return state(req);
     case command::abort:
       return abort(req);
+    case command::action:
+      return action(req);
     default:
       ESP_LOGW(TAG, "Command not found %u", (std::uint8_t)cmd);
+      return send_error(websocket::client(req), error_code::no_command_found);
       break;
   }
   return sys::error{};
@@ -282,6 +286,46 @@ ws_cb<Size>::abort(websocket::request req) noexcept {
   sys::notify(info.task);
   ESP_LOGI(TAG, "Aborted");
   return ret;
+}
+
+template<std::size_t Size>
+sys::error
+ws_cb<Size>::action(websocket::request req) noexcept {
+  auto c = websocket::client(req);
+  if (info.frame.len != sizeof(action_request)) {
+    ESP_LOGW(TAG, "Packet size error");
+    return send_error(c, error_code::packet_size_error);
+  }
+
+  if (info.task != nullptr) {
+    ESP_LOGW(TAG, "No action! Uploading!");
+    return send_error(c, error_code::action_wrong_time);
+  }
+
+  ota::action act = (ota::action)info.frame.payload[1];
+  switch(act) {
+    case action::reset:
+      ESP_LOGI(TAG, "[ACTION] reset [%u]", (std::uint8_t)act);
+      send_action(c, action::reset, 0);
+      sys::reboot();
+      break;
+    case action::validate_image: {
+        ESP_LOGI(TAG, "[ACTION] validate image [%u]", (std::uint8_t)act);
+        auto err = esp_ota_mark_app_valid_cancel_rollback();
+        send_action(c, action::validate_image, err);
+      }
+      break;
+    case action::invalidate_image: {
+        ESP_LOGI(TAG, "[ACTION] invalidate image [%u]", (std::uint8_t)act);
+        auto err = esp_ota_mark_app_invalid_rollback_and_reboot();
+        send_action(c, action::invalidate_image, err);
+      }
+      break;
+    default:
+      ESP_LOGW(TAG, "Action not found %u", (std::uint8_t)act);
+      return send_error(websocket::client(req), error_code::no_action_found);
+  }
+  return sys::error{};
 }
 
 }  // namespace ota

@@ -56,6 +56,7 @@ struct ws_cb {
   static sys::error start(websocket::request) noexcept;
   static sys::error state(websocket::request) noexcept;
   static sys::error abort(websocket::request) noexcept;
+  static sys::error action(websocket::request) noexcept;
 };
 
 }  // namespace ota

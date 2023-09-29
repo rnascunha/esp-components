@@ -42,6 +42,15 @@ send_state(websocket::client client, std::uint32_t size_rcv, std::uint32_t size_
   });
 }
 
+sys::error
+send_action(websocket::client client, action act, std::int32_t err) noexcept {
+  return client.send(action_packet{
+    .cmd = command::action,
+    .act = act,
+    .err = err
+  });
+}
+
 #endif  // CONFIG_HTTPD_WS_SUPPORT
 
 }  // namespace ota
