@@ -23,6 +23,7 @@ exec 3> /dev/null
 # exec 3>&1
 
 target=esp32
+project_description_file=build/project_description.json
 
 root=''
 do_fullclean=0
@@ -106,7 +107,8 @@ print_table_header() {
 }
 
 print_success() {
-  echo "  SUCCESS  |  $(nano_to_seconds $1)  | $(size_file $examples_root/$example/build/$(basename $2).bin)"
+  local project_name=$(jq .project_name $examples_root/$example/$project_description_file | tr -d '"')
+  echo "  SUCCESS  |  $(nano_to_seconds $1)  | $(size_file $examples_root/$example/build/$project_name.bin)"
 }
 
 components=$PWD/components
