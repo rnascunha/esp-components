@@ -11,7 +11,6 @@
 #ifndef COMPONENTS_OTA_OTA_IMPL_WEBSOCKET_IPP__
 #define COMPONENTS_OTA_OTA_IMPL_WEBSOCKET_IPP__
 
-
 #include "inttypes.h"
 #include <cassert>
 #include <chrono>
@@ -36,53 +35,85 @@ namespace ota {
 static constexpr const char*
 TAG = "OTA WS";
 
-template<std::size_t Size>
-static void abort_task(info<Size>& inf, esp_ota_handle_t handler = 0) noexcept {
-  inf.client.clear();
-  inf.task = nullptr;
-  sys::task_delete();
-  if (handler != 0)
-    esp_ota_abort(handler);
+static error_code
+check_update_image(const std::uint8_t* data,
+                   bool check_last_invalid,
+                   bool check_same_version) noexcept {
+  if (!check_last_invalid && !check_same_version)
+    return error_code::success;
+  
+  esp_app_desc_t new_app_info;
+  memcpy(&new_app_info, &data[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
+  ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
+
+  if (check_last_invalid) {
+    const esp_partition_t* last_invalid_app = esp_ota_get_last_invalid_partition();
+    esp_app_desc_t invalid_app_info;
+    if (esp_ota_get_partition_description(last_invalid_app, &invalid_app_info) == ESP_OK) {
+      ESP_LOGI(TAG, "Last invalid firmware version: %s", invalid_app_info.version);
+    }
+
+    // check current version with last invalid partition
+    if (last_invalid_app != nullptr && 
+        memcmp(invalid_app_info.version, new_app_info.version, sizeof(new_app_info.version)) == 0) {
+      ESP_LOGW(TAG, "New version is the same as invalid version.");
+      ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
+      ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
+      return error_code::invalid_version;
+    }
+  }
+
+  if (check_same_version) {
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_app_desc_t running_app_info;
+    esp_ota_get_partition_description(running, &running_app_info);
+    if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
+      ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
+      return error_code::same_version;
+    }
+  }
+  return error_code::success;
 }
 
 template<std::size_t Size>
 static void ota_task(void* arg) {
   ESP_LOGI(TAG, "OTA task initated");
+
   info<Size>& inf = *((info<Size>*)arg);
-
-  const esp_partition_t *configured = esp_ota_get_boot_partition();
-  const esp_partition_t *running = esp_ota_get_running_partition();
-
-  if (configured != running) {
-      ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08" PRIx32 ", but running from offset 0x%08" PRIx32,
-                configured->address, running->address);
-      ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
-  }
-  ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08" PRIx32 ")",
-            running->type, running->subtype, running->address);
+  esp_ota_handle_t update_handle = 0;
+  
+  auto abort_task = [&inf, &update_handle]{
+    inf.client.clear();
+    inf.task = nullptr;
+    if (update_handle != 0)
+      esp_ota_abort(update_handle);
+    sys::task_delete();
+  };
 
   const esp_partition_t *update_partition = esp_ota_get_next_update_partition(nullptr);
   if (update_partition == nullptr) {
     ESP_LOGE(TAG, "Get partition error");
     send_error(inf.client, error_code::get_partiotion_error);
-    abort_task(inf);
-    return;
+    abort_task();
   }
   ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%" PRIx32,
             update_partition->subtype, update_partition->address);
 
   int binary_file_length = 0;
-  /*deal with all receive packet*/
   bool image_header_was_checked = false;
-  esp_ota_handle_t update_handle = 0 ;
+  auto timeout = inf.timeout == 0 ?
+                    sys::time::max :
+                    sys::time::to_ticks(std::chrono::milliseconds(inf.timeout));
   while (true) {
     send_state(inf.client, binary_file_length, info<Size>::buffer_size - sizeof(state_request));
-    sys::notify_wait();
+    if (sys::notify_wait(timeout) == 0) {
+      ESP_LOGW(TAG, "Timeout! Aborting");
+      abort_task();
+    }
   
     if (!inf.client.is_valid()) {
       ESP_LOGI(TAG, "Task aborted");
-      abort_task(inf);
-      return;
+      abort_task();
     }
 
     const state_request* state = (state_request*)inf.frame.payload;
@@ -91,95 +122,59 @@ static void ota_task(void* arg) {
     if (image_header_was_checked == false) {
       ESP_LOGI(TAG, "Checking image");
 
-      esp_app_desc_t new_app_info;
-      if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
-        // check current version with downloading
-        memcpy(&new_app_info, &data[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
-        ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
-
-        esp_app_desc_t running_app_info;
-        if (esp_ota_get_partition_description(running, &running_app_info) == ESP_OK) {
-          ESP_LOGI(TAG, "Running firmware version: %s", running_app_info.version);
-        }
-
-        const esp_partition_t* last_invalid_app = esp_ota_get_last_invalid_partition();
-        esp_app_desc_t invalid_app_info;
-        if (esp_ota_get_partition_description(last_invalid_app, &invalid_app_info) == ESP_OK) {
-          ESP_LOGI(TAG, "Last invalid firmware version: %s", invalid_app_info.version);
-        }
-
-        // check current version with last invalid partition
-        if (last_invalid_app != nullptr) {
-          if (memcmp(invalid_app_info.version, new_app_info.version, sizeof(new_app_info.version)) == 0) {
-            ESP_LOGW(TAG, "New version is the same as invalid version.");
-            ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
-            ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
-            send_error(inf.client, error_code::invalid_version);
-            abort_task(inf);
-          }
-        }
-// #ifndef CONFIG_EXAMPLE_SKIP_VERSION_CHECK
-        if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
-          ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
-          send_error(inf.client, error_code::same_version);
-          abort_task(inf);
-        }
-// #endif
-
-        image_header_was_checked = true;
-
-        sys::error err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
-        if (err) {
-          ESP_LOGE(TAG, "esp_ota_begin failed (%s)", err.message());
-          abort_task(inf, update_handle);
-        }
-        ESP_LOGI(TAG, "esp_ota_begin succeeded");
-      } else {
-        ESP_LOGE(TAG, "received package is not fit len");
-        abort_task(inf, update_handle);
+      auto code = check_update_image(data, inf.check_last_invalid, inf.check_same_version);
+      if (code != error_code::success) {
+        send_error(inf.client, code);
+        abort_task();
       }
+      image_header_was_checked = true;
+
+      sys::error err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &update_handle);
+      if (err) {
+        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", err.message());
+        abort_task();
+      }
+      ESP_LOGI(TAG, "esp_ota_begin succeeded");
     }
     sys::error err = esp_ota_write(update_handle, (const void *)data, data_read);
     if (err) {
       ESP_LOGE(TAG, "Error writting ota data");
-      abort_task(inf, update_handle);
+      abort_task();
     }
     binary_file_length += data_read;
     ESP_LOGD(TAG, "Written image length %d", binary_file_length);
 
     if (state->is_end) break;
   }
-  send_state(binary_file_length, *inf.server);
+  send_state(inf.client, binary_file_length, 0);
 
   ESP_LOGI(TAG, "Total Write binary data length: %d", binary_file_length);
   sys::error err = esp_ota_end(update_handle);
   if (err) {
-    if (err == ESP_ERR_OTA_VALIDATE_FAILED) {
-      ESP_LOGE(TAG, "Image validation failed, image is corrupted");
-    } else {
-      ESP_LOGE(TAG, "esp_ota_end failed (%s)!", err.message());
-    }
-    abort_task(inf);
+    ESP_LOGE(TAG, "esp_ota_end failed (%s)!", err.message());
+    abort_task();
   }
 
   err = esp_ota_set_boot_partition(update_partition);
-  if (err != ESP_OK) {
+  if (err) {
     ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", err.message());
-    abort_task(inf);
+    abort_task();
   }
   ESP_LOGI(TAG, "OTA task finished");
 
   inf.task = nullptr;
   inf.client.clear();
 
-  ESP_LOGI(TAG, "Prepare to restart system!");
-  esp_restart();
+  if (inf.reset) {
+    ESP_LOGI(TAG, "Prepare to restart system!");
+    esp_restart();
+  }
 
   sys::task_delete();
 }
 
 template<std::size_t Size>
-sys::task_handle
+static sys::task_handle
 wesocket_task(info<Size>& info) noexcept {
   return sys::task_create(&ota_task<Size>, OTA_TASK_STACK_SIZE, OTA_TASK_PRIORITY, &info);
 }
@@ -192,20 +187,16 @@ ws_cb<Size>::on_close (int sock, void* server) noexcept {
   if (sock == info.client.fd) {
     info.client.clear();
     if (info.task != nullptr) {
-      ESP_LOGW(TAG, "Deleting OTA task");
       if (info.task != nullptr)
-        vTaskDelete(info.task);
+        sys::notify(info.task);
       info.task = nullptr;
-    }
-    send_abort(abort_reason::user_disconnect, *((http::server*)server));
+    }    
   }
 }
 
 template<std::size_t Size>
 sys::error
 ws_cb<Size>::on_data(websocket::request req) noexcept {
-  ESP_LOGI(TAG, "Data received");
-
   auto ret = req.receive(info.frame, info.buffer);
   if (ret) {
     ESP_LOGI(TAG, "Failed to receive data [%d/%s]", ret.value(), ret.message());
@@ -246,8 +237,18 @@ ws_cb<Size>::start(websocket::request req) noexcept {
   info.server = (http::server*)req.context();
   info.task = wesocket_task(info);
   info.file_size = d->total_size;
+  info.reset = d->reset;
+  info.check_last_invalid = d->check_last_invalid;
+  info.check_same_version = d->check_same_version;
+  info.timeout = d->timeout;
 
-  ESP_LOGW(TAG, "Task started [%" PRIu32 "]", info.file_size);
+  ESP_LOGI(TAG, "fsize: %" PRIu32 ", reset:%u, invalid:%u, same:%u, timeout:%" PRIu16,
+                info.file_size,
+                info.reset,
+                info.check_last_invalid,
+                info.check_same_version,
+                info.timeout);
+  ESP_LOGI(TAG, "Task started [%" PRIu32 "]", info.file_size);
 
   return sys::error{};
 }
@@ -255,7 +256,6 @@ ws_cb<Size>::start(websocket::request req) noexcept {
 template<std::size_t Size>
 sys::error
 ws_cb<Size>::state(websocket::request) noexcept {
-  ESP_LOGI(TAG, "Data received %d", info.frame.len);
   if (info.task != nullptr)
     sys::notify(info.task);
   else
@@ -265,7 +265,7 @@ ws_cb<Size>::state(websocket::request) noexcept {
 
 template<std::size_t Size>
 sys::error
-ws_cb<Size>::abort(websocket::request req) {
+ws_cb<Size>::abort(websocket::request req) noexcept {
   ESP_LOGI(TAG, "Aborting OTA...");
   auto c = websocket::client(req);
   if (info.task == nullptr) {
@@ -277,10 +277,11 @@ ws_cb<Size>::abort(websocket::request req) {
     return send_error(c, error_code::wrong_user);
   }
 
+  auto ret = send_abort(info.client, abort_reason::user_request);
   info.client.clear();
   sys::notify(info.task);
   ESP_LOGI(TAG, "Aborted");
-  return send_abort(abort_reason::user_request, *((http::server*)req.context()));
+  return ret;
 }
 
 }  // namespace ota

@@ -15,7 +15,8 @@ examples_list=("log"
                "http/server_cb"
                "http/login_wifi"
                "http/https_server"
-               "echo_http_ws_serial")
+               "echo_http_ws_serial"
+               "ota/websocket")
 
 # Set redirect
 exec 3> /dev/null

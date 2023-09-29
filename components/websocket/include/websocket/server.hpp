@@ -149,7 +149,7 @@ struct client {
                   httpd_ws_type_t type = HTTPD_WS_TYPE_BINARY) noexcept {
     frame frm = {};
     frm.payload = (std::uint8_t*)&data,
-    frm.len = sizeof(data),
+    frm.len = sizeof(T),
     frm.type = type;
 
     return send(frm);

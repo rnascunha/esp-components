@@ -15,6 +15,8 @@
 
 namespace ota {
 
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+
 sys::error
 send_error(websocket::client client, error_code code) noexcept {
   return client.send(error_packet{
@@ -24,29 +26,22 @@ send_error(websocket::client client, error_code code) noexcept {
 }
 
 sys::error
-send_abort(abort_reason reason, http::server& server) noexcept {
-  return websocket::send_all(server, abort_packet{
+send_abort(websocket::client client, abort_reason reason) noexcept {
+  return client.send(abort_packet{
     .cmd = command::abort,
     .reason = reason
   });
 }
 
 sys::error
-send_state(std::uint32_t size_rcv, http::server& server) noexcept {
-  return websocket::send_all(server, state_packet{
-    .cmd = command::state,
-    .size_rcv = size_rcv,
-    .size_request = 0
-  });
-}
-
-sys::error
-send_state(websocket::client& client, std::uint32_t size_rcv, std::uint32_t size_request) noexcept {
+send_state(websocket::client client, std::uint32_t size_rcv, std::uint32_t size_request) noexcept {
   return client.send(state_packet{
     .cmd = command::state,
     .size_rcv = size_rcv,
     .size_request = size_request
   });
 }
+
+#endif  // CONFIG_HTTPD_WS_SUPPORT
 
 }  // namespace ota

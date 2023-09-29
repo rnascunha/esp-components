@@ -1,3 +1,13 @@
+/**
+ * @file server.cpp
+ * @author Rafael Cunha (rnascunha@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-09-28
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #include "sdkconfig.h"
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT

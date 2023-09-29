@@ -8,8 +8,8 @@
  * @copyright Copyright (c) 2023
  * 
  */
-#ifndef MAIN_PACKET_HPP__
-#define MAIN_PACKET_HPP__
+#ifndef COMPONENT_OPTA_MAIN_PACKET_HPP__
+#define COMPONENT_OPTA_MAIN_PACKET_HPP__
 
 #include <cstdint>
 
@@ -27,14 +27,14 @@ enum class command : std::uint8_t {
 };
 
 enum class error_code : std::uint8_t {
-  already_running = 1,
+  success = 0,
+  already_running,
   not_running,
   wrong_user,
   get_partiotion_error,
   packet_size_error,
   invalid_version,
   same_version,
-  name_too_long,
 };
 
 enum class abort_reason : std::uint8_t {
@@ -52,6 +52,11 @@ struct error_packet {
 struct start_request {
   command       cmd;
   std::uint32_t total_size;
+  std::uint16_t timeout;      // max timeout to wait between packages
+  std::uint8_t  reset:1;      // reset device after update succefully
+  std::uint8_t  check_last_invalid:1;   // check if this version is the same of last invalid
+  std::uint8_t  check_same_version:1;   // check if this version is the same of the current running;
+  std::uint8_t  :5;
 } ATTR_PACKED;
 
 struct state_packet {
@@ -77,15 +82,17 @@ struct abort_packet {
 
 #undef ATTR_PACKED
 
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+
 sys::error
 send_error(websocket::client, error_code) noexcept;
 sys::error
-send_abort(abort_reason, http::server&) noexcept;
+send_abort(websocket::client, abort_reason) noexcept;
 sys::error
-send_state(std::uint32_t size_rcv, http::server&) noexcept;
-sys::error
-send_state(websocket::client&, std::uint32_t size_rcv, std::uint32_t size_request) noexcept;
+send_state(websocket::client, std::uint32_t size_rcv, std::uint32_t size_request) noexcept;
+
+#endif  // CONFIG_HTTPD_WS_SUPPORT
 
 }  // namespace ota
 
-#endif // MAIN_PACKET_HPP__
+#endif // COMPONENT_OPTA_MAIN_PACKET_HPP__
