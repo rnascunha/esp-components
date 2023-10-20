@@ -18,7 +18,7 @@ water_flow_sensor::water_flow_sensor(gpio_num_t pin, int k) noexcept
     .low_limit = -1,
     .high_limit = uc::pulse_counter::high_limit,
     .flags = {
-      .accum_count = 0
+      .accum_count = 1
     }
   }), 
   channel_(pc_, {
