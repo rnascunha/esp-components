@@ -168,7 +168,7 @@ static void ota_task(void* arg) {
 
   if (inf.reset) {
     ESP_LOGI(TAG, "Prepare to restart system!");
-    esp_restart();
+    sys::reboot();
   }
 
   sys::task_delete();

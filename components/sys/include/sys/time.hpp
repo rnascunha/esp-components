@@ -17,6 +17,8 @@
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 
+#include "esp_timer.h"
+
 #include "sys/type_traits.hpp"
 
 namespace sys {
@@ -39,8 +41,13 @@ to_ticks(ticks duration) noexcept {
   return duration;
 }
 
-[[nodiscard]] std::chrono::microseconds
-uptime() noexcept;
+template<typename Rep, typename Ratio>
+[[nodiscard]] std::chrono::duration<Rep, Ratio>
+uptime() noexcept {
+  return std::chrono::duration_cast<
+                      std::chrono::duration<Rep, Ratio>
+                    >(std::chrono::microseconds(esp_timer_get_time()));
+}
 
 template<typename T>
 concept tick_time = is_duration_v<T> || std::is_same_v<T, sys::time::ticks>;
