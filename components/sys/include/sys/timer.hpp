@@ -49,6 +49,11 @@ class timer {
     return esp_timer_restart(handler_, std::chrono::microseconds(time).count());
   }
 
+  [[nodiscard]] bool
+  is_active() const noexcept {
+    return esp_timer_is_active(handler_);
+  }
+
   sys::error stop() noexcept;
   sys::error erase() noexcept;
 
