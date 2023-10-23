@@ -58,8 +58,10 @@ class simple_wps_retry {
                void* event_data) noexcept;
 
   int retry() const noexcept { return retry_; }
-  int max_retry() const noexcept { return max_retry_; }
   void reset() noexcept;
+
+  int max_retry() const noexcept { return max_retry_; }
+  void max_retry(int retry_num) noexcept { max_retry_ = retry_num; }
 
   bool is_connected() const noexcept;
   bool failed() const noexcept;
