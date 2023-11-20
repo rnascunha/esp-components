@@ -51,6 +51,29 @@ struct debounce {
   int count_ = 0;
 };
 
+template<sys::Duration D, typename Callback, int LevelPress = 0>
+struct debounce_isr {
+  debounce_isr(uc::gpio&& gpio, D d, Callback cb, void* arg = nullptr) noexcept
+    : btn(std::move(gpio)), duration(d), cb(cb) {
+    btn.add_isr(GPIO_INTR_ANYEDGE, [](void* arg) {
+      auto& b = *static_cast<debounce_isr*>(arg);
+      if (b.btn.read() == LevelPress) {
+        b.press_time = sys::time::uptime<std::chrono::microseconds>();
+      } else {
+        if (sys::time::uptime<std::chrono::microseconds>() - b.press_time > b.duration) {
+          b.cb(b.arg);
+        }
+      }
+    }, this);
+  }
+
+  uc::gpio btn;
+  D duration;
+  Callback cb;
+  void* arg = nullptr;
+  std::chrono::microseconds press_time = std::chrono::microseconds(0);
+};
+
 }  // namespace facility
 
 #endif  // COMPONENTS_FACILITY_DEBOUNCE_HPP_

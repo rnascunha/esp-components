@@ -41,12 +41,10 @@ to_ticks(ticks duration) noexcept {
   return duration;
 }
 
-template<typename Rep, typename Ratio>
-[[nodiscard]] std::chrono::duration<Rep, Ratio>
+template<Duration D>
+[[nodiscard]] D
 uptime() noexcept {
-  return std::chrono::duration_cast<
-                      std::chrono::duration<Rep, Ratio>
-                    >(std::chrono::microseconds(esp_timer_get_time()));
+  return std::chrono::duration_cast<D>(std::chrono::microseconds(esp_timer_get_time()));
 }
 
 template<typename T>

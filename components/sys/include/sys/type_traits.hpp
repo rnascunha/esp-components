@@ -26,6 +26,9 @@ template<typename T>
 static constexpr bool
 is_duration_v = is_duration<T>::value;
 
+template<typename D>
+concept Duration = is_duration_v<D>;
+
 }  // namespace sys
 
 #endif  // COMPONENTS_SYS_TYPE_TRAITS_HPP_

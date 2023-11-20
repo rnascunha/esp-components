@@ -41,6 +41,14 @@ task_create(TaskFunction_t func,
 }
 
 /**
+ * @see https://www.freertos.org/a00021.html#xTaskGetCurrentTaskHandle
+ */
+[[nodiscard]] inline task_handle
+current_task_handler() noexcept {
+  return xTaskGetCurrentTaskHandle();
+}
+
+/**
  * @see https://www.freertos.org/ulTaskNotifyTake.html
  */
 std::uint32_t

@@ -1,8 +1,9 @@
 #/bin/bash
 
 examples_list=("log"
-               "uc/adc_stream"
                "uc/gpio"
+               "uc/button_led"
+               "uc/adc_stream"
                "uc/pulse_counter"
                "peripherals/water_flow_sensor"
                "wave"
@@ -16,7 +17,8 @@ examples_list=("log"
                "http/login_wifi"
                "http/https_server"
                "echo_http_ws_serial"
-               "ota/websocket")
+               "ota/websocket"
+               "facility/debounce")
 
 # Set redirect
 exec 3> /dev/null
