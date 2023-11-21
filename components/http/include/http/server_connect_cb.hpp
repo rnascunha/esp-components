@@ -31,30 +31,6 @@ struct not_register{};
 
 using server_cb_func = void(*)(server&);
 
-namespace detail {
-
-#if CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
-template<bool IsSecure>
-[[nodiscard]] constexpr auto
-default_init() noexcept -> std::conditional_t<IsSecure,
-                                         server::ssl_config,
-                                         server::config> {
-  if constexpr (IsSecure)
-    return HTTPD_SSL_CONFIG_DEFAULT();
-  else
-    return HTTPD_DEFAULT_CONFIG();
-}
-#else
-template<bool IsSecure>
-[[nodiscard]] constexpr auto
-default_init() noexcept -> server::config {
-  return HTTPD_DEFAULT_CONFIG();
-}
-#endif  // CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
-
-
-}  // namespace detail
-
 template<bool IsSecure = false,
          typename StartCallable = server_cb_func>
 struct server_connect_cb {
@@ -81,7 +57,7 @@ struct server_connect_cb {
   }
 
   server        svr;
-  config_type   config = detail::default_init<IsSecure>();
+  config_type   config = default_config<IsSecure>();
   StartCallable call;
 };
 

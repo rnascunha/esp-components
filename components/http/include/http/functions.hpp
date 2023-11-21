@@ -38,6 +38,25 @@ register_uris(server& handler, const std::array<uri_error, N>& uris) noexcept {
   }
 }
 
+#if CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
+template<bool IsSecure>
+[[nodiscard]] constexpr auto
+default_config() noexcept -> std::conditional_t<IsSecure,
+                                         server::ssl_config,
+                                         server::config> {
+  if constexpr (IsSecure)
+    return HTTPD_SSL_CONFIG_DEFAULT();
+  else
+    return HTTPD_DEFAULT_CONFIG();
+}
+#else
+template<bool IsSecure>
+[[nodiscard]] constexpr auto
+default_config() noexcept -> server::config {
+  return HTTPD_DEFAULT_CONFIG();
+}
+#endif  // CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
+
 }  // namespace http
 
 #endif  // COMPONENTS_HTTP_HELPER_HPP_
