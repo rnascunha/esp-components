@@ -95,6 +95,8 @@ simple_wifi_retry<Callbacks>::wifi_handler(void* arg,
         Callbacks::connecting(arg, event_data);
       break;
     case WIFI_EVENT_STA_DISCONNECTED:
+      if constexpr (wifi::detail::has_disconnected_v<Callbacks>)
+        Callbacks::disconnected(arg, event_data);
       if (retry_++ < max_retry_) {
         esp_wifi_connect();
         if constexpr (wifi::detail::has_connecting_v<Callbacks>)

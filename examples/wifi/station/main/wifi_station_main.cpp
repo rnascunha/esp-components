@@ -36,6 +36,10 @@ struct wifi_cb {
     ESP_LOGI("CB",  "Connecting");
   }
 
+  static void disconnected(void*, void*) {
+    ESP_LOGI("CB",  "Disconnected");
+  }
+
   static void fail(void*, void*) {
     ESP_LOGI("CB",  "FAIL");
   }
@@ -85,8 +89,6 @@ extern "C" void app_main() {
     return;
   }
 
-  while (true) {
-    using namespace std::chrono_literals;
-    sys::delay(5s);
-  }
+  while (true)
+    sys::delay(sys::time::max);
 }
