@@ -12,6 +12,7 @@ jobs:
         submodules: 'recursive'
     - name: Install dependencies
       run: sudo apt-get install -y jq
+      shell: bash
     - name: Espressif IoT Development Framework (ESP-IDF)
       uses: espressif/esp-idf-ci-action@v1.1.0
       with:

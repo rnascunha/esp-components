@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 examples_list=("log"
                "uc/gpio"
