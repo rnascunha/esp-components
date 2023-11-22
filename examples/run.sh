@@ -18,7 +18,9 @@ examples_list=("log"
                "http/https_server"
                "echo_http_ws_serial"
                "ota/websocket"
-               "facility/debounce")
+               "facility/debounce"
+               "facility/debounce_isr"
+               "facility/debounce_timer")
 
 # Set redirect
 exec 3> /dev/null

@@ -23,18 +23,10 @@ extern "C" void app_main() {
   uc::gpio::install_isr();
 
   using namespace std::chrono_literals;
-  facility::debounce btn(uc::gpio(GPIO_BUTTON, GPIO_MODE_INPUT), 2s);
-
-  ESP_LOGI(TAG, "Waiting press button");
-  btn.wait(1s, [&led]() {
+  facility::debounce_isr(uc::gpio(GPIO_BUTTON, GPIO_MODE_INPUT), 2s, [&led](void*) {
     led.write(!led.read());
   });
 
-  ESP_LOGI(TAG, "Waiting over, entrering loop");
-  while (true) {
-    sys::delay(1s);
-    if (btn.check()) {
-      led.write(!led.read());
-    }
-  }
+  while (true)
+    sys::delay(sys::time::max);
 }

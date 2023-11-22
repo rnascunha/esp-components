@@ -10,6 +10,7 @@
  */
 #include <cstdint>
 #include <cstring>
+#include <cassert>
 
 #include "esp_http_server.h"
 #if CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
@@ -39,6 +40,7 @@ server::server(ssl_config& cfg) noexcept {
 
 sys::error
 server::start(const config& config) noexcept {
+  assert(handler_ == nullptr && "HTTP server already started");
   auto ret = httpd_start(&handler_, &config);
   if (ret != ESP_OK)
     handler_ = nullptr;
@@ -48,6 +50,7 @@ server::start(const config& config) noexcept {
 #if CONFIG_ESP_HTTPS_SERVER_ENABLE == 1
 sys::error
 server::start(ssl_config& cfg) noexcept {
+  assert(handler_ == nullptr && "HTTP server already started");
   auto ret = httpd_ssl_start(&handler_, &cfg);
   if (ret != ESP_OK)
     handler_ = nullptr;
@@ -57,38 +60,45 @@ server::start(ssl_config& cfg) noexcept {
 
 sys::error
 server::register_uri(const uri& uri) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_register_uri_handler(handler_, &uri);
 }
 
 sys::error
 server::unregister_uri(const char* uri) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_unregister_uri(handler_, uri);
 }
 
 sys::error
 server::unregister_uri(const char* uri,
                        method method) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_unregister_uri_handler(handler_, uri, method);
 }
 
 sys::error
 server::register_uri(error_code error,
                      error_func func) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_register_err_handler(handler_, error, func);
 }
 
 sys::error
 server::register_uri(const error& err) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return register_uri(err.code, err.handler);
 }
 
 sys::error
 server::unregister_uri(httpd_err_code_t error) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_register_err_handler(handler_, error, NULL);
 }
 
 sys::error
 server::unregister_uri(const error& err) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return unregister_uri(err.code);
 }
 
@@ -110,6 +120,7 @@ server::initiate(ssl_config& cfg) noexcept {
 
 sys::error
 server::client_list(std::size_t& size, int* clients) noexcept {
+  assert(handler_ != nullptr && "HTTP server not started");
   return httpd_get_client_list(handler_, &size, clients);
 }
 

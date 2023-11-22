@@ -115,7 +115,7 @@ extern "C" void app_main() {
 #endif  // CONFIG_ENABLE_MDNS == 1
 
   facility::debounce btn(uc::gpio((gpio_num_t)CONFIG_PIN_BUTTON, GPIO_MODE_INPUT),
-                         CONFIG_TIME_HOLD_BUTTON);
+                         std::chrono::seconds(CONFIG_TIME_HOLD_BUTTON));
   using namespace std::chrono_literals;
   btn.wait(1s, reset_reboot);
 }
