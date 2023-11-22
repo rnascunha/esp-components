@@ -29,7 +29,7 @@
 #define _EXAMPLE_ADC_UNIT_STR(unit)         #unit
 #define EXAMPLE_ADC_UNIT_STR(unit)          _EXAMPLE_ADC_UNIT_STR(unit)
 #define EXAMPLE_ADC_CONV_MODE               ADC_CONV_SINGLE_UNIT_1
-#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_12
 #define EXAMPLE_ADC_BIT_WIDTH               SOC_ADC_DIGI_MAX_BITWIDTH
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -93,6 +93,9 @@ extern "C" void app_main() {
   uc::adc::stream adc({
     .max_store_buf_size = EXAMPLE_ADC_BUFFER_SIZE,
     .conv_frame_size = EXAMPLE_READ_LEN_BYTES,
+    .flags = {
+      .flush_pool = false,
+    }
   });
   
   if (!adc.is_initiated()) {

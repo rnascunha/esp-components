@@ -39,6 +39,7 @@ extern "C" void app_main(void)
   uc::pulse_counter counter({
     .low_limit = uc::pulse_counter::low_limit,
     .high_limit = uc::pulse_counter::high_limit,
+    .intr_priority = 0,
     .flags = {
       .accum_count = 0
     }
